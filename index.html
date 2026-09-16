@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>X dashboard</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--soft:#efede7;--text:#1f1e1c;--muted:#6b6a65;--border:rgba(0,0,0,.1);--strong:rgba(0,0,0,.22);--accent:#2563eb;--accent-bg:#e6effd;--ok:#2f7d32;--ok-bg:#e7f3e3;--warn:#8a5a00;--warn-bg:#fbf0d9;--bad:#b42318;--bad-bg:#fdeceb;--radius:10px}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1b1a;--card:#252524;--soft:#2e2e2c;--text:#ecebe6;--muted:#a3a29c;--border:rgba(255,255,255,.1);--strong:rgba(255,255,255,.22);--accent:#6ea0ff;--accent-bg:#1e2d4a;--ok:#8fd18f;--ok-bg:#1f3320;--warn:#f0c46a;--warn-bg:#3a2e14;--bad:#ff8f86;--bad-bg:#3d1f1c}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
+button{font:inherit;color:var(--text);background:var(--card);border:1px solid var(--strong);border-radius:var(--radius);padding:9px 14px;min-height:40px}
+button.sm{padding:6px 10px;min-height:34px;font-size:13px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.full{width:100%;margin-top:10px}
+button:disabled{opacity:.45}
+input,textarea,select{font:inherit;font-size:16px;color:var(--text);background:var(--card);border:1px solid var(--strong);border-radius:var(--radius);padding:9px 11px;width:100%}
+textarea{resize:vertical}
+a{color:var(--accent)}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.between{justify-content:space-between}
+.end{justify-content:flex-end;margin-top:8px}
+.small{font-size:13px}.muted{color:var(--muted)}.ok{color:var(--ok)}.bad{color:var(--bad)}.run{color:var(--warn)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;margin:10px 0}
+.quote{color:var(--muted);border-left:2px solid var(--strong);padding-left:8px;margin:6px 0;font-size:14px;white-space:pre-wrap;word-break:break-word}
+.reply{border:1px solid var(--border);border-radius:8px;padding:8px;margin-top:6px;white-space:pre-wrap;word-break:break-word}
+.pill{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--accent-bg);color:var(--accent)}
+.pill.soft{background:var(--soft);color:var(--muted)}.pill.badp{background:var(--bad-bg);color:var(--bad)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--bad);margin-right:6px;vertical-align:1px}
+.dot.on{background:var(--ok)}
+.section{margin-top:16px}
+h3{font-size:15px;margin:18px 0 4px}
+label{display:block;margin:10px 0 4px}
+#app{min-height:100vh;display:flex;flex-direction:column}
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--border);padding:calc(10px + env(safe-area-inset-top)) 16px 10px}
+main{flex:1;padding:4px 16px calc(84px + env(safe-area-inset-bottom))}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;background:var(--card);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs button{flex:1;border:none;border-radius:0;background:transparent;color:var(--muted);font-size:12px;padding:10px 0 12px;min-height:56px}
+nav.tabs button.on{color:var(--accent);font-weight:600}
+.log{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.55;margin-top:8px}
+.line{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)}
+.line .t{color:var(--muted);flex-shrink:0}
+.line.ok span:last-child{color:var(--ok)}.line.error span:last-child{color:var(--bad)}.line.run span:last-child{color:var(--warn)}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:6px}
+.thumbs img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;border:1px solid var(--border);display:block}
+.radio{display:flex;gap:8px;align-items:flex-start;margin:8px 0}
+.radio input{width:auto;margin-top:3px}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(72px + env(safe-area-inset-bottom));z-index:10;background:var(--text);color:var(--bg);border-radius:12px;padding:11px 14px;font-size:14px}
+#toast.bad{background:var(--bad);color:#fff}#toast.ok{background:var(--ok);color:#fff}
+#login{max-width:420px;margin:0 auto;padding:calc(48px + env(safe-area-inset-top)) 20px}
+</style>
+</head>
+<body>
+<div id="login" hidden>
+  <h2>X dashboard</h2>
+  <p class="muted">Sign in with the account set up for phone access.</p>
+  <form id="loginForm">
+    <label for="email">Email</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <button class="primary full" type="submit">Sign in</button>
+    <div id="loginError" class="small bad" style="margin-top:10px"></div>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <header id="head"></header>
+  <main id="view"></main>
+  <nav class="tabs" id="tabs">
+    <button data-tab="live" class="on">Live</button>
+    <button data-tab="queue">Queue</button>
+    <button data-tab="posts">Posts</button>
+    <button data-tab="settings">Settings</button>
+  </nav>
+</div>
+<div id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+const sb = supabase.createClient(window.XDASH_CONFIG.url, window.XDASH_CONFIG.key, { auth: { persistSession: true, autoRefreshToken: true } });
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const enc = encodeURIComponent;
+
+const snap = { state: null, content: null, providers: null };
+let agent = null;
+let activity = [];
+let channel = null;
+let realtime = 'CONNECTING';
+let tab = 'live';
+let edits = {};
+let postEdit = null;
+let direction = '';
+let rendered = {};
+let deferred = false;
+const pending = new Map();
+
+// ---------- helpers ----------
+function toast(message, kind = '') {
+  const el = $('#toast');
+  el.textContent = message;
+  el.className = kind;
+  el.hidden = false;
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => { el.hidden = true; }, kind === 'bad' ? 6000 : 3500);
+}
+
+function agoText(seconds) {
+  if (seconds < 60) return `${seconds}s ago`;
+  if (seconds < 3600) return `${Math.round(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.round(seconds / 3600)}h ago`;
+  return `${Math.round(seconds / 86400)}d ago`;
+}
+
+function clock(ts) {
+  const d = new Date(ts);
+  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return d.toDateString() === new Date().toDateString() ? time : `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${time}`;
+}
+
+const macOnline = () => Boolean(agent && Date.now() - new Date(agent.last_seen).getTime() < 30000);
+const noData = () => '<div class="empty">Waiting for your Mac to send data. Check that the dashboard is running there.</div>';
+
+// ---------- auth and data ----------
+async function boot() {
+  const { data } = await sb.auth.getSession();
+  if (data.session) start();
+  else showLogin();
+  sb.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') showLogin(); });
+}
+
+function showLogin() {
+  $('#app').hidden = true;
+  $('#login').hidden = false;
+}
+
+$('#loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('#loginError').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email: $('#email').value.trim(), password: $('#password').value });
+  if (error) $('#loginError').textContent = error.message;
+  else start();
+});
+
+async function start() {
+  $('#login').hidden = true;
+  $('#app').hidden = false;
+  await loadAll();
+  subscribe();
+  render(true);
+}
+
+async function loadAll() {
+  const [snaps, acts, ag] = await Promise.all([
+    sb.from('xdash_snapshots').select('key,data'),
+    sb.from('xdash_activity').select('*').order('ts', { ascending: false }).limit(200),
+    sb.from('xdash_agent').select('*').eq('id', 1).maybeSingle(),
+  ]);
+  if (snaps.error) return toast(`Couldn't load: ${snaps.error.message}`, 'bad');
+  for (const row of snaps.data) snap[row.key] = row.data;
+  activity = acts.data || [];
+  agent = ag.data || null;
+  if (!snaps.data.length && !agent) toast('No data yet. Either your Mac has never synced, or this account has no access.', 'bad');
+}
+
+function subscribe() {
+  if (channel) sb.removeChannel(channel);
+  channel = sb
+    .channel('xdash')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'xdash_snapshots' }, async (p) => {
+      if (!p.new || !p.new.key) return;
+      if (p.new.data) snap[p.new.key] = p.new.data;
+      else {
+        const { data } = await sb.from('xdash_snapshots').select('data').eq('key', p.new.key).single();
+        if (data) snap[p.new.key] = data.data;
+      }
+      render();
+    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'xdash_activity' }, (p) => {
+      activity.unshift(p.new);
+      if (activity.length > 300) activity.length = 300;
+      if (tab === 'live') renderLive();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'xdash_agent' }, (p) => {
+      agent = p.new;
+      renderHeader();
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'xdash_commands' }, (p) => onCommandUpdate(p.new))
+    .subscribe((status) => {
+      realtime = status;
+      renderHeader();
+    });
+}
+
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible' || $('#app').hidden) return;
+  await loadAll();
+  subscribe();
+  render(true);
+});
+setInterval(() => { if (!$('#app').hidden) renderHeader(); }, 5000);
+
+// ---------- commands ----------
+async function send(action, args = {}, label = '') {
+  const payload = label ? { ...args, label } : args;
+  const { data, error } = await sb.from('xdash_commands').insert({ action, args: payload }).select('id').single();
+  if (error) return toast(`Couldn't send: ${error.message}`, 'bad');
+  pending.set(data.id, label || action);
+  toast(macOnline() ? 'Sent to your Mac…' : 'Your Mac is offline. This runs if it reconnects within 15 minutes.', macOnline() ? '' : 'bad');
+}
+
+function onCommandUpdate(row) {
+  if (!pending.has(row.id)) return;
+  if (row.status === 'done') {
+    pending.delete(row.id);
+    toast('Done', 'ok');
+  } else if (row.status === 'failed') {
+    pending.delete(row.id);
+    toast(row.error || 'Failed', 'bad');
+  }
+}
+
+// ---------- rendering ----------
+function render(force = false) {
+  renderHeader();
+  const focused = document.activeElement;
+  const typing = focused && focused.closest && focused.closest('#view') && ['TEXTAREA', 'INPUT', 'SELECT'].includes(focused.tagName);
+  if (typing && !force) { deferred = true; return; }
+  deferred = false;
+  if (tab === 'live') renderLive();
+  if (tab === 'queue') renderQueue(force);
+  if (tab === 'posts') renderPosts(force);
+  if (tab === 'settings') renderSettings(force);
+}
+
+document.addEventListener('focusout', () => setTimeout(() => { if (deferred) render(); }, 150));
+
+function renderHeader() {
+  const st = snap.state;
+  const settings = st && st.settings;
+  const seen = agent ? Math.round((Date.now() - new Date(agent.last_seen).getTime()) / 1000) : null;
+  const online = macOnline();
+  const approved = st ? st.queue.filter((c) => c.status === 'approved').length : 0;
+  let doing = '';
+  if (st && st.worker.sending) doing = `Posting to @${st.worker.sending.handle}`;
+  else if (settings && settings.paused) doing = 'Sending paused';
+  else if (settings && settings.alert) doing = 'Needs attention';
+  else if (approved) doing = `${approved} queued`;
+  else if (st && st.worker.finding) doing = 'Finding posts';
+  $('#head').innerHTML = `
+    <div class="row between">
+      <b>X dashboard</b>
+      <span class="small ${online ? 'ok' : 'bad'}"><span class="dot ${online ? 'on' : ''}"></span>${online ? 'Mac online' : seen == null ? 'Mac never connected' : `Mac offline · ${agoText(seen)}`}</span>
+    </div>
+    <div class="row" style="margin-top:8px">
+      ${doing ? `<span class="pill">${esc(doing)}</span>` : ''}
+      ${st ? `<span class="pill soft">Sent today ${st.sentToday}/${settings.dailyLimit}</span>` : ''}
+      ${realtime !== 'SUBSCRIBED' ? '<span class="pill badp">Reconnecting live updates</span>' : ''}
+      ${settings ? `<button class="sm" data-act="pause" style="margin-left:auto">${settings.paused ? 'Resume sending' : 'Pause sending'}</button>` : ''}
+    </div>
+    ${settings && settings.alert ? `<div class="small bad" style="margin-top:6px">${esc(settings.alert)}</div>` : ''}
+    ${settings && settings.llmAlert ? `<div class="small bad" style="margin-top:6px">AI drafting stopped: ${esc(settings.llmAlert.message)}</div>` : ''}`;
+}
+
+function renderLive() {
+  if (tab !== 'live') return;
+  $('#view').innerHTML = activity.length
+    ? `<div class="log">${activity.map((a) => `<div class="line ${esc(a.level)}"><span class="t">${esc(clock(a.ts))}</span><span>${esc(a.message)}</span></div>`).join('')}</div>`
+    : '<div class="empty">No activity yet. Status lines appear here the moment your Mac does something.</div>';
+}
+
+function candidateCard(c, { pill = '', actions = '', editable = false } = {}) {
+  const draft = edits[c.id] ?? c.draft ?? '';
+  const who = `@${esc(c.handle)}`;
+  return `<div class="card">
+    <div class="row between"><div><b>${esc(c.name)}</b> <a class="small" href="https://x.com/${enc(c.handle)}/status/${enc(c.id)}" target="_blank" rel="noopener noreferrer">${who}</a></div>${pill}</div>
+    <div class="quote">${esc(c.text)}</div>
+    ${editable
+      ? `<textarea data-edit="${esc(c.id)}" maxlength="280" rows="3">${esc(draft)}</textarea>
+         <div class="row between" style="margin-top:6px"><span class="small muted" data-count="${esc(c.id)}">${draft.length}/280</span>
+           <span class="row"><button class="sm" data-cmd="skip" data-id="${esc(c.id)}" data-label="${who}">Skip</button>
+           <button class="sm" data-cmd="regenerate" data-id="${esc(c.id)}" data-label="${who}">Rewrite</button>
+           <button class="sm primary" data-act="approve" data-id="${esc(c.id)}">Approve</button></span></div>`
+      : `<div class="reply">${esc(c.draft || '')}</div>${actions ? `<div class="row end">${actions}</div>` : ''}`}
+    ${c.error ? `<div class="small bad" style="margin-top:6px">${esc(c.error)}</div>` : ''}
+  </div>`;
+}
+
+function renderQueue(force) {
+  const st = snap.state;
+  if (!st) return ($('#view').innerHTML = noData());
+  const failed = st.history.filter((h) => h.status === 'failed');
+  const sig = JSON.stringify([st.queue.map((c) => [c.id, c.status, c.draft, c.error]), failed.map((f) => f.id), st.worker.finding]);
+  if (!force && sig === rendered.queue) return;
+  rendered.queue = sig;
+  const pendingList = st.queue.filter((c) => c.status === 'pending');
+  const inFlight = st.queue.filter((c) => c.status !== 'pending');
+  $('#view').innerHTML = `
+    <div class="row between" style="margin-top:10px"><span class="small muted">${pendingList.length} to review</span>
+      <span class="row"><button class="sm" data-cmd="findPosts" ${st.worker.finding ? 'disabled' : ''}>Find new posts</button>
+      <button class="sm primary" data-act="approveAll" ${pendingList.length ? '' : 'disabled'}>Approve all</button></span></div>
+    ${inFlight.map((c) => candidateCard(c, {
+      pill: `<span class="pill">${c.status === 'sending' ? 'Posting now' : 'Queued'}</span>`,
+      actions: c.status === 'approved' ? `<button class="sm" data-cmd="unapprove" data-id="${esc(c.id)}" data-label="@${esc(c.handle)}">Move back</button>` : '',
+    })).join('')}
+    ${pendingList.map((c) => candidateCard(c, { editable: true })).join('')}
+    ${failed.length ? `<h3>Failed</h3>${failed.map((c) => candidateCard(c, { pill: '<span class="pill badp">Failed</span>', actions: `<button class="sm" data-act="retry" data-id="${esc(c.id)}">Retry</button>` })).join('')}` : ''}
+    ${!pendingList.length && !inFlight.length && !failed.length ? '<div class="empty">No drafts waiting. Tap "Find new posts".</div>' : ''}`;
+}
+
+const postLimit = () => (postEdit && postEdit.mediaChoice === 'link' ? 256 : 280);
+
+function sourceLinks(p) {
+  return p.sources.map((s) => `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.source)}</a>`).join(' · ');
+}
+
+function renderPosts(force) {
+  const ct = snap.content;
+  if (!ct) return ($('#view').innerHTML = noData());
+  const cur = ct.current;
+  if (!cur) postEdit = null;
+  else if (!postEdit || postEdit.id !== cur.id || postEdit.serverText !== cur.text) {
+    postEdit = { id: cur.id, text: cur.text || '', serverText: cur.text, mediaChoice: cur.media_choice || 'none', mediaRef: cur.media_ref || null };
+  }
+  const sig = JSON.stringify([ct.state, ct.poolLeft, ct.ideas.map((i) => i.id), cur && [cur.id, cur.status, cur.text, cur.image_prompt, cur.image_refs], ct.history.map((h) => h.id)]);
+  if (!force && sig === rendered.posts) return;
+  rendered.posts = sig;
+  const s = ct.state;
+
+  let html = `<div class="card"><b>Today's post</b>
+    <label class="small muted" for="direction">Direction (optional)</label>
+    <input id="direction" maxlength="200" placeholder="AI agents for small businesses" value="${esc(direction)}">
+    <button class="primary full" data-act="research" ${s.busy ? 'disabled' : ''}>Research today's ideas</button>
+    ${s.busy ? `<div class="small run" style="margin-top:8px">${esc(s.step || 'Working')}…</div>` : s.error ? `<div class="small bad" style="margin-top:8px">${esc(s.error)}</div>` : ''}
+  </div>`;
+
+  if (ct.ideas.length || ct.poolLeft) {
+    html += `<div class="row between section"><b>${ct.ideas.length ? 'Pick one idea' : 'Ideas ready'}</b>
+      <button class="sm" data-cmd="spin" ${s.busy || !ct.poolLeft ? 'disabled' : ''}>${ct.ideas.length ? 'Spin 3 new' : 'Show 3'} · ${ct.poolLeft} left</button></div>`;
+  }
+  html += ct.ideas.map((p) => `<div class="card"><b>${esc(p.title)}</b><div style="margin-top:4px">${esc(p.angle)}</div>
+    <div class="small muted" style="margin-top:4px">Why now: ${esc(p.why_now)}</div><div class="small" style="margin-top:4px">${sourceLinks(p)}</div>
+    <div class="row end"><button class="sm" data-cmd="choose" data-id="${esc(p.id)}" data-label="${esc(p.title.slice(0, 40))}" ${s.busy ? 'disabled' : ''}>Use this idea</button></div></div>`).join('');
+
+  if (cur) {
+    const e = postEdit;
+    let body;
+    if (cur.text == null) {
+      body = s.busy ? '<div class="small run">Writing the draft…</div>' : `<div class="row between"><span class="bad small">The draft wasn't written.</span><button class="sm" data-cmd="redraft" data-id="${esc(cur.id)}">Try again</button></div>`;
+    } else {
+      const refs = cur.image_refs || [];
+      const radio = (value, checked) => `<input type="radio" name="media" value="${esc(value)}" ${checked ? 'checked' : ''}>`;
+      body = `<textarea id="postText" rows="5" maxlength="${postLimit()}">${esc(e.text)}</textarea>
+        <div class="row between" style="margin-top:6px"><span class="small muted" id="postCount">${e.text.length}/${postLimit()}</span>
+          <button class="sm" data-cmd="redraft" data-id="${esc(cur.id)}" ${s.busy ? 'disabled' : ''}>Rewrite</button></div>
+        <label class="small muted">AI image prompt</label>
+        <textarea id="imagePrompt" rows="3" readonly>${esc(cur.image_prompt || '')}</textarea>
+        <div class="row end" style="justify-content:flex-start"><button class="sm" data-act="copyPrompt">Copy prompt</button></div>
+        <label class="small muted">Media</label>
+        <label class="radio">${radio('none', e.mediaChoice === 'none')}<span>No image</span></label>
+        ${cur.sources.map((src) => `<label class="radio">${radio('link|' + src.url, e.mediaChoice === 'link' && e.mediaRef === src.url)}<span>Link to the ${esc(src.source)} article (X shows its preview)</span></label>`).join('')}
+        ${refs.length ? `<div class="small muted" style="margin-top:6px">Image references. Only use one if you have the right to.</div>
+          <div class="thumbs">${refs.map((r) => `<label><a href="${esc(r.imageUrl)}" target="_blank" rel="noopener noreferrer"><img src="${esc(r.imageUrl)}" referrerpolicy="no-referrer" alt=""></a>
+            <span class="radio" style="margin:4px 0">${radio('image|' + r.imageUrl, e.mediaChoice === 'image' && e.mediaRef === r.imageUrl)}<span class="small">Use (${esc(r.source)})</span></span></label>`).join('')}</div>` : ''}
+        <div id="imageNote" class="small run" style="margin-top:6px" ${e.mediaChoice === 'image' ? '' : 'hidden'}>X can't attach an image from a link. Tap the image, save it, then add it in X before posting.</div>
+        <button class="primary full" data-act="openX">Open in X</button>
+        <div class="row between" style="margin-top:8px">
+          <button class="sm" data-act="discard" data-id="${esc(cur.id)}">Discard</button>
+          <button class="sm" data-cmd="markPosted" data-id="${esc(cur.id)}" data-label="${esc(cur.title.slice(0, 40))}">I posted it</button>
+        </div>`;
+    }
+    html += `<h3>Your draft</h3><div class="card"><b>${esc(cur.title)}</b><div class="small" style="margin:4px 0 8px">${sourceLinks(cur)}</div>${body}</div>`;
+  }
+
+  if (ct.history.length) {
+    html += `<h3>Posted topics</h3><div class="card">${ct.history.map((h) => `<div class="row between" style="padding:6px 0;border-bottom:1px solid var(--border)">
+      <span>${esc(h.title)}<br><span class="small muted">${new Date(h.posted_at).toLocaleDateString()}</span></span>
+      ${h.posted_url ? `<a class="small" href="${esc(h.posted_url)}" target="_blank" rel="noopener noreferrer">View</a>` : ''}</div>`).join('')}</div>`;
+  }
+  $('#view').innerHTML = html;
+}
+
+function renderSettings(force) {
+  const st = snap.state;
+  if (!st) return ($('#view').innerHTML = noData());
+  const providers = snap.providers || [];
+  const s = st.settings;
+  const sig = JSON.stringify([s.llmProvider, s.llmModel, s.dailyLimit, st.sentToday, providers.map((p) => [p.id, p.models, p.hasKey])]);
+  if (!force && sig === rendered.settings) return;
+  rendered.settings = sig;
+  $('#view').innerHTML = `
+    <div class="card"><b>AI model for drafting</b>
+      <label class="small muted" for="provider">Provider</label>
+      <select id="provider">${providers.map((p) => `<option value="${esc(p.id)}" ${p.id === s.llmProvider ? 'selected' : ''}>${esc(p.label)}</option>`).join('')}</select>
+      <label class="small muted" for="model">Model</label>
+      <select id="model"></select>
+      <div id="providerNote" class="small muted" style="margin-top:6px"></div>
+      <button class="full" data-act="saveModel">Save AI model</button>
+    </div>
+    <div class="card"><b>Daily reply limit</b>
+      <div class="small muted">Sent today: ${st.sentToday}</div>
+      <input id="dailyLimit" type="number" min="0" max="1000" inputmode="numeric" value="${esc(s.dailyLimit)}" style="margin-top:8px">
+      <div class="row" style="margin-top:8px"><button class="sm" data-act="saveLimit">Save limit</button><button class="sm" data-act="resetDaily">Reset today's count</button></div>
+    </div>
+    <div class="card"><b>Account</b><div class="small muted" id="accountEmail"></div><button class="full" data-act="signOut">Sign out</button></div>`;
+  fillModels(s.llmModel);
+  sb.auth.getUser().then(({ data }) => { const el = $('#accountEmail'); if (el && data.user) el.textContent = data.user.email; });
+}
+
+function fillModels(selected) {
+  const providers = snap.providers || [];
+  const p = providers.find((x) => x.id === ($('#provider') || {}).value);
+  const select = $('#model');
+  if (!p || !select) return;
+  select.innerHTML = p.models.map((m) => `<option value="${esc(m)}" ${m === selected ? 'selected' : ''}>${esc(m)}</option>`).join('') || '<option value="">No models found</option>';
+  $('#providerNote').textContent = [p.note, p.hasKey ? '' : `Add ${p.keyEnv} to .env on your Mac first.`, p.modelsError || ''].filter(Boolean).join(' ');
+}
+
+function updatePostCount() {
+  const box = $('#postText');
+  if (!box || !postEdit) return;
+  box.maxLength = postLimit();
+  $('#postCount').textContent = `${postEdit.text.length}/${postLimit()}`;
+  const note = $('#imageNote');
+  if (note) note.hidden = postEdit.mediaChoice !== 'image';
+}
+
+// ---------- events ----------
+document.addEventListener('input', (e) => {
+  const t = e.target;
+  if (t.dataset.edit) {
+    edits[t.dataset.edit] = t.value;
+    const counter = document.querySelector(`[data-count="${CSS.escape(t.dataset.edit)}"]`);
+    if (counter) counter.textContent = `${t.value.length}/280`;
+  } else if (t.id === 'postText' && postEdit) {
+    postEdit.text = t.value;
+    updatePostCount();
+  } else if (t.id === 'direction') {
+    direction = t.value;
+  }
+});
+
+document.addEventListener('change', (e) => {
+  const t = e.target;
+  if (t.name === 'media' && postEdit) {
+    const [choice, ...rest] = t.value.split('|');
+    postEdit.mediaChoice = choice;
+    postEdit.mediaRef = rest.length ? rest.join('|') : null;
+    updatePostCount();
+  } else if (t.id === 'provider') {
+    fillModels(null);
+  }
+});
+
+$('#tabs').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  tab = b.dataset.tab;
+  document.querySelectorAll('#tabs button').forEach((x) => x.classList.toggle('on', x === b));
+  window.scrollTo(0, 0);
+  render(true);
+});
+
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('button');
+  if (!b || b.closest('#tabs') || b.type === 'submit') return;
+  const st = snap.state;
+  const id = b.dataset.id;
+
+  if (b.dataset.cmd) {
+    if (b.dataset.cmd === 'discardDraft' && !confirm('Discard this draft?')) return;
+    return send(b.dataset.cmd, id ? { id } : {}, b.dataset.label || '');
+  }
+
+  switch (b.dataset.act) {
+    case 'pause':
+      return send('pause', { paused: !st.settings.paused }, st.settings.paused ? 'resume' : 'pause');
+    case 'approve': {
+      const c = st.queue.find((x) => x.id === id);
+      if (!c) return;
+      const draft = edits[id] ?? c.draft;
+      delete edits[id];
+      return send('approve', { id, draft }, `@${c.handle}`);
+    }
+    case 'retry': {
+      const c = st.history.find((x) => x.id === id);
+      if (!c) return;
+      if (!confirm(`Retry the reply to @${c.handle}? The earlier attempt may have posted, so check X first.`)) return;
+      return send('approve', { id, draft: c.draft }, `@${c.handle}`);
+    }
+    case 'approveAll': {
+      const n = st.queue.filter((c) => c.status === 'pending').length;
+      if (!confirm(`Approve ${n} replies? They post one at a time, about 10 seconds apart.`)) return;
+      const drafts = { ...edits };
+      edits = {};
+      return send('approveAll', { drafts }, `${n} replies`);
+    }
+    case 'research':
+      return send('research', { direction: direction.trim() }, direction.trim() ? `direction: ${direction.trim().slice(0, 40)}` : '');
+    case 'discard':
+      if (!confirm('Discard this draft?')) return;
+      return send('discardDraft', { id }, '');
+    case 'copyPrompt':
+      try {
+        await navigator.clipboard.writeText($('#imagePrompt').value);
+        b.textContent = 'Copied';
+      } catch {
+        $('#imagePrompt').select();
+        toast('Select the text and copy it.');
+      }
+      return;
+    case 'openX': {
+      if (!postEdit || !snap.content.current) return;
+      const text = postEdit.text.trim();
+      if (!text || text.length > postLimit()) return toast(`Post text must be 1–${postLimit()} characters.`, 'bad');
+      const full = postEdit.mediaChoice === 'link' && postEdit.mediaRef ? `${text} ${postEdit.mediaRef}` : text;
+      // Opened synchronously from the tap so the phone hands it to the X app.
+      window.open(`https://x.com/intent/post?text=${enc(full)}`, '_blank', 'noopener');
+      return send('updateDraft', { id: postEdit.id, text, mediaChoice: postEdit.mediaChoice, mediaRef: postEdit.mediaRef }, 'draft');
+    }
+    case 'saveModel':
+      return send('saveSettings', { llmProvider: $('#provider').value, llmModel: $('#model').value }, $('#model').value);
+    case 'saveLimit': {
+      const limit = parseInt($('#dailyLimit').value, 10);
+      if (!Number.isInteger(limit) || limit < 0) return toast('Enter a whole number.', 'bad');
+      return send('saveSettings', { dailyLimit: limit }, `limit ${limit}`);
+    }
+    case 'resetDaily':
+      if (!confirm(`Reset today's count? It allows up to ${st.settings.dailyLimit} more replies today. Many replies in a day is what gets X accounts restricted.`)) return;
+      return send('resetDaily', {}, '');
+    case 'signOut':
+      await sb.auth.signOut();
+      return;
+  }
+});
+
+boot();
+</script>
+</body>
+</html>
