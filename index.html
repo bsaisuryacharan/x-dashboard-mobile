@@ -468,7 +468,8 @@ $('#tabs').addEventListener('click', (e) => {
 
 document.addEventListener('click', async (e) => {
   const b = e.target.closest('button');
-  if (!b || b.closest('#tabs') || b.type === 'submit') return;
+  // Buttons default to type="submit", so exclude the login form by location, not by type.
+  if (!b || b.closest('#tabs') || b.closest('#loginForm')) return;
   const st = snap.state;
   const id = b.dataset.id;
 
