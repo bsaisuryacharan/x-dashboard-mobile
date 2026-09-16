@@ -337,6 +337,7 @@ function renderPosts(force) {
     <input id="direction" maxlength="200" placeholder="AI agents for small businesses" value="${esc(direction)}">
     <button class="primary full" data-act="research" ${s.busy ? 'disabled' : ''}>Research today's ideas</button>
     ${s.busy ? `<div class="small run" style="margin-top:8px">${esc(s.step || 'Working')}…</div>` : s.error ? `<div class="small bad" style="margin-top:8px">${esc(s.error)}</div>` : ''}
+    ${!s.busy && !s.error && s.notice ? `<div class="small muted" style="margin-top:8px">${esc(s.notice)}</div>` : ''}
   </div>`;
 
   if (ct.ideas.length || ct.poolLeft) {
